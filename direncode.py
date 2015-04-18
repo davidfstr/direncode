@@ -141,7 +141,8 @@ def encode(src_filepath, dst_filepath):
                 stdout=log_file,
                 stderr=subprocess.STDOUT)
     except:
-        # Error while encoding? Leave the part file and the log file
+        # Error while encoding? Leave the part file and the log file.
+        # The residual files will suppress repeated encode operations.
         pass
     else:
         # Success? Move the part file into place and remove the log
