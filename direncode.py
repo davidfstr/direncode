@@ -20,35 +20,34 @@
 # Requires: Python 2.7 or later
 # 
 
+import getopt
 import os
 import os.path
 import subprocess
+import sys
 
-src_dirpath = '/Volumes/Fireman/TORRENTS'
-dst_dirpath = '/Volumes/Fireman/TORRENTS - ENCODED'
+# ------------------------------------------------------------------------------
+# Main
 
-
-def is_ignored_filename(filename):
-    if filename.startswith('.'):
-        return True
-    if filename == 'Icon\r':
-        return True
-    if filename == 'Thumbs.db':
-        return True
-    if filename.endswith('.part'):
-        return True
-    return False
-
-def make_fileid(filename):
-    return filename.split('.', 1)[0]
-
-def is_movie_file(filename):
-    ext = filename.rsplit('.', 1)[-1]
-    return ext in ['mp4', 'm4v', 'mkv', 'avi', 'ogm']
-
-def make_encoded_filename(src_filename):
-    non_ext = src_filename.rsplit('.', 1)[0]
-    return non_ext + '.m4v'
+def main(args):
+    # Parse arguments
+    opts, args = getopt.getopt(args, 'w', ['watch'])
+    
+    if len(args) != 2:
+        exit("""syntax: direncode.py [<options>] SOURCE_DIR DESTINATION_DIR
+    
+    Options:
+        -w, --watch             Continuously watch the source directory
+                                and continue synchronizing both directories.
+    """)
+    src_dirpath, dst_dirpath = args
+    
+    watch = False
+    for (k, v) in opts:
+        if k in ['-w', '--watch']:
+            watch = True
+    
+    sync_directories(src_dirpath, dst_dirpath)
 
 
 def sync_directories(src_dirpath, dst_dirpath):
@@ -88,6 +87,7 @@ def sync_directories(src_dirpath, dst_dirpath):
         print('ENTER: ' + src_filepath)
         sync_directories(src_filepath, dst_filepath)
 
+
 def encode(src_filepath, dst_filepath):
     # Encode to the output directory and save the encode log
     log_filepath = dst_filepath + '.part.log.txt'
@@ -105,4 +105,35 @@ def encode(src_filepath, dst_filepath):
         os.rename(dst_filepath + '.part', dst_filepath)
         os.remove(log_filepath)
 
-sync_directories(src_dirpath, dst_dirpath)
+# ------------------------------------------------------------------------------
+# Utility
+
+def is_ignored_filename(filename):
+    if filename.startswith('.'):
+        return True
+    if filename == 'Icon\r':
+        return True
+    if filename == 'Thumbs.db':
+        return True
+    if filename.endswith('.part'):
+        return True
+    return False
+
+
+def make_fileid(filename):
+    return filename.split('.', 1)[0]
+
+
+def is_movie_file(filename):
+    ext = filename.rsplit('.', 1)[-1]
+    return ext in ['mp4', 'm4v', 'mkv', 'avi', 'ogm']
+
+
+def make_encoded_filename(src_filename):
+    non_ext = src_filename.rsplit('.', 1)[0]
+    return non_ext + '.m4v'
+
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
