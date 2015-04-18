@@ -164,9 +164,11 @@ def encode(src_filepath, dst_filepath):
         with open(log_filepath, 'wb') as log_file:
             try:
                 subprocess.check_call(
-                    [HBENCODE, '--auto', '-o', dst_filepath + '.part', src_filepath],
+                    [HBENCODE, '--auto', '-o', dst_filepath + '.part', '-x', '-f mp4', src_filepath],
                     stdout=log_file,
                     stderr=subprocess.STDOUT)
+                if not os.path.exists(dst_filepath + '.part'):
+                    raise AssertionError('hbencode exited successfully but did not generate output file: ' + dst_filepath)
             except Exception as e:
                 # Log any exceptions that occur
                 traceback.print_exc(file=log_file)
