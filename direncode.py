@@ -35,6 +35,8 @@ from watchdog.events import FileSystemEventHandler
 # ------------------------------------------------------------------------------
 # Main
 
+PREFERENCES_FILEPATH = os.path.join(os.path.expanduser('~'), '.direncode_prefs')
+
 def main(args):
     # Parse arguments
     opts, args = getopt.getopt(args, 'w', ['watch'])
@@ -52,6 +54,27 @@ def main(args):
     for (k, v) in opts:
         if k in ['-w', '--watch']:
             watch = True
+    
+    # Load preferences
+    preferences = load_preferences(PREFERENCES_FILEPATH)
+    
+    # Locate hbencode.py
+    global HBENCODE
+    HBENCODE = preferences.get('hbencode', None)
+    while True:
+        if HBENCODE is None:
+            HBENCODE = raw_input('Path to hbencode.py: ')
+        
+        if not os.path.exists(HBENCODE):
+            print 'hbencode.py not found at: %s' % HBENCODE
+            HBENCODE = None
+            continue
+        else:
+            break
+    
+    # Save preferences, in case they were updated
+    preferences['hbencode'] = HBENCODE
+    save_preferences(PREFERENCES_FILEPATH, preferences)
     
     if not watch:
         sync_directories(src_dirpath, dst_dirpath)
@@ -132,12 +155,14 @@ def sync_directories(src_dirpath, dst_dirpath):
 
 
 def encode(src_filepath, dst_filepath):
+    global HBENCODE
+    
     # Encode to the output directory and save the encode log
     log_filepath = dst_filepath + '.part.log.txt'
     try:
         with open(log_filepath, 'wb') as log_file:
             subprocess.check_call(
-                ['hbencode', '--auto', '-o', dst_filepath + '.part', src_filepath],
+                [HBENCODE, '--auto', '-o', dst_filepath + '.part', src_filepath],
                 stdout=log_file,
                 stderr=subprocess.STDOUT)
     except:
@@ -150,7 +175,7 @@ def encode(src_filepath, dst_filepath):
         os.remove(log_filepath)
 
 # ------------------------------------------------------------------------------
-# Utility
+# Filename Manipulations
 
 def is_ignored_filename(filename):
     if filename.startswith('.'):
@@ -176,6 +201,31 @@ def is_movie_file(filename):
 def make_encoded_filename(src_filename):
     non_ext = src_filename.rsplit('.', 1)[0]
     return non_ext + '.m4v'
+
+# ------------------------------------------------------------------------------
+# Preferences
+
+def load_preferences(preferences_filepath):
+    preferences = {}
+    
+    if not os.path.exists(preferences_filepath):
+        return preferences
+    
+    with open(preferences_filepath, 'rb') as preferences_file:
+        for line in preferences_file:
+            (k, v) = line.strip('\r\n').split('=', 1)
+            preferences[k] = v
+    
+    return preferences
+
+
+def save_preferences(preferences_filepath, preferences):
+    with open(preferences_filepath, 'wb') as preferences_file:
+        for (k, v) in preferences.iteritems():
+            preferences_file.write(k)
+            preferences_file.write('=')
+            preferences_file.write(v)
+            preferences_file.write('\n')
 
 # ------------------------------------------------------------------------------
 
