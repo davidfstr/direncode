@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 #
 # Keeps the files in a source and destination directory in sync.
 #
@@ -17,7 +16,11 @@
 # Certain files in the source directory will be ignored,
 # such as invisible files and .part files.
 # 
-# Requires: Python 2.7 or later
+# Prerequisites:
+#   * Python 2.7 or later
+#   * watchdog
+# 
+# @author David Foster
 # 
 
 import getopt
@@ -25,6 +28,9 @@ import os
 import os.path
 import subprocess
 import sys
+import time
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 # ------------------------------------------------------------------------------
 # Main
@@ -47,13 +53,46 @@ def main(args):
         if k in ['-w', '--watch']:
             watch = True
     
-    sync_directories(src_dirpath, dst_dirpath)
+    if not watch:
+        sync_directories(src_dirpath, dst_dirpath)
+    else:
+        # Queue up an initial directory sync operation
+        global watched_dir_changed
+        watched_dir_changed = True
+        
+        class DirectoryChangeEventHandler(FileSystemEventHandler):
+            def on_any_event(self, event):
+                global watched_dir_changed
+                watched_dir_changed = True
+        
+        # Start watching source directory for changes
+        observer = Observer()
+        observer.schedule(
+            DirectoryChangeEventHandler(), src_dirpath,
+            recursive=True)
+        observer.start()
+        
+        # Wait until interrupted by keyboard
+        try:
+            while True:
+                if watched_dir_changed:
+                    # (Keep all directory sync operations on the same thread)
+                    while sync_directories(src_dirpath, dst_dirpath):
+                        pass
+                    watched_dir_changed = False
+                    print('WATCHING: ' + src_dirpath)
+                time.sleep(1)
+        except KeyboardInterrupt:
+            observer.stop()
+        observer.join()
 
 
 def sync_directories(src_dirpath, dst_dirpath):
+    changed = False
+    
     src_filenames = [fn for fn in os.listdir(src_dirpath) if not is_ignored_filename(fn)]
     dst_filenames = [fn for fn in os.listdir(dst_dirpath) if not is_ignored_filename(fn)]
-
+    
     # Sync files in this directory
     dst_fileids = [make_fileid(fn) for fn in dst_filenames]
     for src_filename in src_filenames:
@@ -68,11 +107,13 @@ def sync_directories(src_dirpath, dst_dirpath):
                 print('ENCODE: ' + src_filepath)
                 dst_filepath = os.path.join(dst_dirpath, make_encoded_filename(src_filename))
                 encode(src_filepath, dst_filepath)
+                changed = True
             else:
                 # Symlink it
                 print('SYMLINK: ' + src_filepath)
                 dst_filepath = os.path.join(dst_dirpath, src_filename)
                 os.symlink(src_filepath, dst_filepath)
+                changed = True
 
     # Sync folders in this directory
     for src_filename in src_filenames:
@@ -84,8 +125,10 @@ def sync_directories(src_dirpath, dst_dirpath):
         if not os.path.exists(dst_filepath):
             print('MKDIR: ' + src_filepath)
             os.mkdir(dst_filepath)
-        print('ENTER: ' + src_filepath)
-        sync_directories(src_filepath, dst_filepath)
+            changed = True
+        changed = sync_directories(src_filepath, dst_filepath) or changed
+    
+    return changed
 
 
 def encode(src_filepath, dst_filepath):
