@@ -29,6 +29,7 @@ import os.path
 import subprocess
 import sys
 import time
+import traceback
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -161,10 +162,15 @@ def encode(src_filepath, dst_filepath):
     log_filepath = dst_filepath + '.part.log.txt'
     try:
         with open(log_filepath, 'wb') as log_file:
-            subprocess.check_call(
-                [HBENCODE, '--auto', '-o', dst_filepath + '.part', src_filepath],
-                stdout=log_file,
-                stderr=subprocess.STDOUT)
+            try:
+                subprocess.check_call(
+                    [HBENCODE, '--auto', '-o', dst_filepath + '.part', src_filepath],
+                    stdout=log_file,
+                    stderr=subprocess.STDOUT)
+            except Exception as e:
+                # Log any exceptions that occur
+                traceback.print_exc(file=log_file)
+                raise
     except:
         # Error while encoding? Leave the part file and the log file.
         # The residual files will suppress repeated encode operations.
