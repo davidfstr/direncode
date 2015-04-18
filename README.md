@@ -11,13 +11,17 @@ Encodes all video files in a source directory to a destination directory. Option
 * [Python] 2.7 or later
     * Python 3.x &mdash; probably works, but untested
 * [hbencode] 1.1 or later
+* [watchdog] 0.8.3 or later
 
 [Python]: http://www.python.org
 [hbencode]: https://github.com/davidfstr/hbencode
+[watchdog]: https://pypi.python.org/pypi/watchdog
 
 ## Installation
 
-1. Install and configure all requirements mentioned above. In particular [hbencode] has some required configuration.
+1. Install and configure all requirements mentioned above.
+    * In particular [hbencode] has some required configuration.
+    * [watchdog] can usually be installed with `pip install watchdog`.
 2. Copy `direncode.py` to somewhere in your system path.
 
 ## Usage
