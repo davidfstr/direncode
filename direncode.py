@@ -198,7 +198,8 @@ def is_ignored_filename(filename):
 
 
 def make_fileid(filename):
-    return filename.split('.', 1)[0]
+    non_ext = filename.rsplit('.', 1)[0]
+    return non_ext
 
 
 def is_movie_file(filename):
