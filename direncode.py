@@ -34,7 +34,7 @@ PREFERENCES_FILEPATH = os.path.join(os.path.expanduser('~'), '.direncode_prefs')
 
 def main(args):
     # Parse arguments
-    opts, args = getopt.getopt(args, 'w', ['watch'])
+    opts, args = getopt.getopt(args, 'wd', ['watch', 'delete'])
     
     if len(args) != 2:
         exit("""syntax: direncode.py [<options>] SOURCE_DIR DESTINATION_DIR
@@ -42,13 +42,17 @@ def main(args):
     Options:
         -w, --watch             Continuously watch the source directory
                                 and continue synchronizing both directories.
+        -d, --delete            Delete extraneous files from destination.
     """)
     src_dirpath, dst_dirpath = args
     
     watch = False
+    delete_in_dst = False
     for (k, v) in opts:
         if k in ['-w', '--watch']:
             watch = True
+        if k in ['-d', '--delete']:
+            delete_in_dst = True
     
     # Load preferences
     preferences = load_preferences(PREFERENCES_FILEPATH)
@@ -72,7 +76,7 @@ def main(args):
     save_preferences(PREFERENCES_FILEPATH, preferences)
     
     if not watch:
-        sync_directories(src_dirpath, dst_dirpath)
+        sync_directories(src_dirpath, dst_dirpath, delete_in_dst)
     else:
         # Queue up an initial directory sync operation
         global watched_dir_changed
@@ -95,7 +99,7 @@ def main(args):
             while True:
                 if watched_dir_changed:
                     # (Keep all directory sync operations on the same thread)
-                    while sync_directories(src_dirpath, dst_dirpath):
+                    while sync_directories(src_dirpath, dst_dirpath, delete_in_dst):
                         pass
                     watched_dir_changed = False
                     print('WATCHING: ' + src_dirpath)
@@ -105,7 +109,14 @@ def main(args):
         observer.join()
 
 
-def sync_directories(src_dirpath, dst_dirpath):
+def sync_directories(src_dirpath, dst_dirpath, delete_in_dst):
+    changed = sync_creates_to_dst(src_dirpath, dst_dirpath)
+    if delete_in_dst:
+        changed = sync_deletes_to_dst(src_dirpath, dst_dirpath) or changed
+    return changed
+
+    
+def sync_creates_to_dst(src_dirpath, dst_dirpath):
     changed = False
     
     src_filenames = [fn for fn in os.listdir(src_dirpath) if not is_ignored_filename(fn)]
@@ -144,7 +155,42 @@ def sync_directories(src_dirpath, dst_dirpath):
             print('MKDIR: ' + src_filepath)
             os.mkdir(dst_filepath)
             changed = True
-        changed = sync_directories(src_filepath, dst_filepath) or changed
+        changed = sync_creates_to_dst(src_filepath, dst_filepath) or changed
+
+
+def sync_deletes_to_dst(src_dirpath, dst_dirpath):
+    changed = False
+    
+    if os.path.exists(src_dirpath):
+        src_filenames = [fn for fn in os.listdir(src_dirpath) if not is_ignored_filename(fn)]
+    else:
+        src_filenames = []
+    dst_filenames = [fn for fn in os.listdir(dst_dirpath) if not is_ignored_filename(fn)]
+    
+    # Delete output files in destination that are not present in the source
+    src_fileids = [make_fileid(fn) for fn in src_filenames]
+    for dst_filename in dst_filenames:
+        dst_filepath = os.path.join(dst_dirpath, dst_filename)
+        
+        if os.path.isdir(dst_filepath):
+            src_filepath = os.path.join(src_dirpath, dst_filename)
+            
+            # Recurse into subdirectories
+            changed = sync_deletes_to_dst(src_filepath, dst_filepath) or changed
+            
+            # Source directory was deleted and destination is empty? Delete it.
+            if not os.path.exists(src_filepath) and not os.listdir(dst_filepath):
+                print('RMDIR: ' + dst_filepath)
+                os.rmdir(dst_filepath)
+                changed = True
+        else:
+            dst_fileid = make_fileid(dst_filename)
+            if dst_fileid not in src_fileids:
+                if is_movie_file(dst_filename) or os.path.islink(dst_filepath):
+                    # Delete it
+                    print('DELETE: ' + dst_filepath)
+                    os.remove(dst_filepath)
+                    changed = True
     
     return changed
 
