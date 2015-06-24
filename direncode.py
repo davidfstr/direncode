@@ -16,12 +16,6 @@
 # Certain files in the source directory will be ignored,
 # such as invisible files and .part files.
 # 
-# Prerequisites:
-#   * Python 2.7 or later
-#   * watchdog
-# 
-# @author David Foster
-# 
 
 import getopt
 import os
