@@ -20,6 +20,7 @@
 import getopt
 import os
 import os.path
+import shutil
 import subprocess
 import sys
 import time
@@ -179,9 +180,10 @@ def sync_deletes_to_dst(src_dirpath, dst_dirpath):
             changed = sync_deletes_to_dst(src_filepath, dst_filepath) or changed
             
             # Source directory was deleted and destination is empty? Delete it.
-            if not os.path.exists(src_filepath) and not os.listdir(dst_filepath):
+            if not os.path.exists(src_filepath) and \
+                    is_directory_effectively_empty(dst_filepath):
                 print('RMDIR: ' + dst_filepath)
-                os.rmdir(dst_filepath)
+                shutil.rmtree(dst_filepath)
                 changed = True
         else:
             dst_fileid = make_fileid(dst_filename)
@@ -193,6 +195,12 @@ def sync_deletes_to_dst(src_dirpath, dst_dirpath):
                     changed = True
     
     return changed
+
+
+def is_directory_effectively_empty(dirpath):
+    invisible_filenames = ['.DS_Store', 'Thumbs.db']
+    visible_files = [f for f in os.listdir(dirpath) if f not in invisible_filenames]
+    return len(visible_files) == 0
 
 
 def encode(src_filepath, dst_filepath):
