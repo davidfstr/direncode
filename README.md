@@ -1,6 +1,8 @@
-# direncode 1.0
+# direncode
 
 Encodes all video files in a source directory to a destination directory. Optionally, the source directory will be watched continuously for changes and any new files will be encoded.
+
+This behavior is useful for setting up a video encoding pipeline where one directory's contents are continuously encoded to another directory.
 
 ## Requirements
 
@@ -38,6 +40,23 @@ Continously encode all files that appear in `/srcdir` to directory `/dstdir` unt
 direncode.py --watch /srcdir /dstdir
 ```
 
+Continously encode from `/srcdir` to `/dstdir`, and additionally synchronize deletions that occur in `/srcdir` to `/dstdir`:
+
+```
+direncode.py --watch --delete /srcdir /dstdir
+```
+
+Display full usage information by invoking `direncode.py` with no arguments:
+
+```
+syntax: direncode.py [<options>] SOURCE_DIR DESTINATION_DIR
+    
+    Options:
+        -w, --watch             Continuously watch the source directory
+                                and continue synchronizing both directories.
+        -d, --delete            Delete extraneous files from destination.
+```
+
 ## Support
 
 If you run into problems or have questions, feel free to file a
@@ -51,3 +70,11 @@ If you run into problems or have questions, feel free to file a
 This software is licensed under the [MIT License].
 
 [MIT License]: https://github.com/davidfstr/direncode/blob/master/LICENSE.txt
+
+## Release Notes
+
+* 1.1
+	* Supports `--delete` option to additionally synchronize deletes.
+* 1.0
+	* Initial version.
+	* Supports `--watch` option for continuous synchronization.
