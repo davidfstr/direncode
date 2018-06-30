@@ -1,5 +1,11 @@
 # direncode
 
+> **Retired:** This project was originally created as part of my video transcoding
+> pipeline for watching videos from my media center computer from mobile devices
+>  such as my phone. However I now use [VLC Streamer] for that purpose.
+
+[VLC Streamer]: http://hobbyistsoftware.com/vlcstreamer/
+
 Encodes all video files in a source directory to a destination directory. Optionally, the source directory will be watched continuously for changes and any new files will be encoded.
 
 This behavior is useful for setting up a video encoding pipeline where one directory's contents are continuously encoded to another directory.
