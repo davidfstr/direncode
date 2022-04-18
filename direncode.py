@@ -157,6 +157,8 @@ def sync_creates_to_dst(src_dirpath, dst_dirpath):
             os.mkdir(dst_filepath)
             changed = True
         changed = sync_creates_to_dst(src_filepath, dst_filepath) or changed
+    
+    return changed
 
 
 def sync_deletes_to_dst(src_dirpath, dst_dirpath):
