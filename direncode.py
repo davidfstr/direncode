@@ -63,10 +63,10 @@ def main(args):
     HBENCODE = preferences.get('hbencode', None)
     while True:
         if HBENCODE is None:
-            HBENCODE = raw_input('Path to hbencode.py: ')
+            HBENCODE = input('Path to hbencode.py: ')
         
         if not os.path.exists(HBENCODE):
-            print 'hbencode.py not found at: %s' % HBENCODE
+            print('hbencode.py not found at: %s' % HBENCODE)
             HBENCODE = None
             continue
         else:
@@ -270,7 +270,7 @@ def load_preferences(preferences_filepath):
     if not os.path.exists(preferences_filepath):
         return preferences
     
-    with open(preferences_filepath, 'rb') as preferences_file:
+    with open(preferences_filepath, 'r') as preferences_file:
         for line in preferences_file:
             (k, v) = line.strip('\r\n').split('=', 1)
             preferences[k] = v
@@ -279,8 +279,8 @@ def load_preferences(preferences_filepath):
 
 
 def save_preferences(preferences_filepath, preferences):
-    with open(preferences_filepath, 'wb') as preferences_file:
-        for (k, v) in preferences.iteritems():
+    with open(preferences_filepath, 'w') as preferences_file:
+        for (k, v) in preferences.items():
             preferences_file.write(k)
             preferences_file.write('=')
             preferences_file.write(v)

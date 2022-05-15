@@ -7,11 +7,10 @@ This behavior is useful for setting up a video encoding pipeline where one direc
 ## Requirements
 
 * Operating System:
-    * Mac OS X 10.9.5 (Mavericks) or later
+    * macOS 10.15.7 (Catalina) or later
     * Linux &mdash; probably works, but untested
     * Windows &mdash; probably works, but untested
-* [Python] 2.7 or later
-    * Python 3.x &mdash; probably works, but untested
+* [Python] 3.7 or later
 * [hbencode] 1.1 or later
 * [watchdog] 0.8.3 or later
 
